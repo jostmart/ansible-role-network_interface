@@ -33,7 +33,7 @@
     src: "bond_{{ ansible_os_family }}.j2"
     dest: "{{ net_path }}/ifcfg-{{ item.device }}"
   with_items: "{{ network_bond_interfaces }}"
-  when: network_bond_interfaces
+  when: network_bond_interfaces is defined
   register: bond_result
 
 - name: Make sure the bonding module is loaded
@@ -78,7 +78,7 @@
     state: present
   when: vlan_result is changed
 
-- name: Make the 8021q module persistent
+- name: Make the 8021q module persistent (Debian and Ubuntu)
   become: true
   lineinfile:
     line: '8021q'
@@ -87,6 +87,18 @@
   when:
     - network_vlan_interfaces is defined
     - network_modprobe_persist is defined
+    - ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+
+- name: Make the 8021q module persistent (CentOS and RedHat)
+  become: true
+  lineinfile:
+    line: '8021q'
+    dest: /etc/modules-load.d/bonding.conf
+    insertafter: EOF
+  when:
+    - network_vlan_interfaces is defined
+    - network_modprobe_persist is defined
+    - ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
 
 - name: Create the network configuration file for bridge devices
   template:
