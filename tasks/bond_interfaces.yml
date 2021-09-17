@@ -24,11 +24,17 @@
   when: bond_result is changed
   notify: restart networking
 
+- name: Create the configuration file for bond devices if it doesnt exist
+  template:
+    src: modules.conf.j2
+    dest: /etc/modules-load.d/modules.conf
+    force: no
+
 - name: Make the bonding module persistent
   become: true
   lineinfile:
     line: 'bonding'
-    dest: /etc/modules
+    dest: /etc/modules-load.d/modules.conf
     insertafter: EOF
   when:
     - network_modprobe_persist
